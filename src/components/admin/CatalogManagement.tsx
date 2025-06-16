@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +38,12 @@ const CatalogManagement = () => {
   };
 
   const handleCreateCatalog = async (catalogData: { name: string; description: string; coverImage: string }) => {
+    // Exibe um toast de carregamento
+    const { dismiss } = toast({
+      title: "Criando catálogo...",
+      description: "Por favor, aguarde.",
+    });
+
     try {
       await saveExternalCatalog({
         title: catalogData.name,
@@ -47,18 +52,22 @@ const CatalogManagement = () => {
         external_content_image_urls: []
       });
       
+      // Atualiza o toast para sucesso
+      dismiss();
       toast({
         title: "Sucesso!",
         description: `Catálogo "${catalogData.name}" criado com sucesso.`,
       });
 
       setShowCreateModal(false);
-      loadCatalogs(); 
-    } catch (error) {
+      loadCatalogs();
+    } catch (error: any) {
+      // Atualiza o toast para erro
+      dismiss();
       console.error('Error creating catalog:', error);
       toast({
         title: "Erro ao criar catálogo",
-        description: "Ocorreu um erro ao tentar salvar o catálogo.",
+        description: error.message || "Ocorreu um erro ao tentar salvar o catálogo.",
         variant: "destructive"
       });
     }
