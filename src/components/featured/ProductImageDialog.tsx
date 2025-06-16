@@ -26,8 +26,8 @@ const ProductImageDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      {/* O DialogContent já inclui um botão de fechar por padrão */}
-      <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none">
+      {/* Adicione as classes especiais aqui */}
+      <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none [&>button]:bg-white/80 [&>button]:text-gray-800 [&>button]:hover:bg-white [&>button]:rounded-full [&>button]:p-1">
         <DialogTitle>
           <VisuallyHidden>Visualização em tela cheia</VisuallyHidden>
         </DialogTitle>
@@ -54,7 +54,6 @@ const ProductImageDialog = ({
               <p className="text-red-500">Não foi possível carregar a imagem</p>
             </div>
           )}
-          {/* O botão duplicado foi removido daqui */}
         </div>
       </DialogContent>
     </Dialog>
