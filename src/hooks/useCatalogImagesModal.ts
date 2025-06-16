@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalUrlCatalog } from '@/types/externalCatalogTypes';
@@ -35,47 +34,71 @@ export const useCatalogImagesModal = (catalog: ExternalUrlCatalog) => {
   }, [loadCatalogImages]);
 
   const addImageUrlToCatalog = async (imageUrl: string) => {
+    const allCatalogs = await externalCatalogService.getAllCatalogs();
+    const currentCatalogVersion = allCatalogs.find(c => c.id === catalog.id);
+    
+    if (!currentCatalogVersion) {
+        throw new Error("Catálogo não encontrado. Tente novamente.");
+    }
+
+    const updatedUrls = [...(currentCatalogVersion.external_content_image_urls || []), imageUrl];
+    
+    await externalCatalogService.updateCatalog(catalog.id, {
+        external_content_image_urls: updatedUrls,
+    });
+  };
+
+  const handleFileSubmit = async (files: File[]) => {
+    if (!files || files.length === 0) return;
     setIsUploading(true);
+
+    const uploadPromises = files.map(file => uploadCatalogImage(file, 'catalog-images'));
+
     try {
-        const allCatalogs = await externalCatalogService.getAllCatalogs();
-        const currentCatalogVersion = allCatalogs.find(c => c.id === catalog.id);
-        
-        if (!currentCatalogVersion) {
-            throw new Error("Catálogo não encontrado. Tente novamente.");
-        }
+      const uploadedUrls = await Promise.all(uploadPromises);
+      
+      // Adiciona todas as novas URLs de uma vez
+      const allCatalogs = await externalCatalogService.getAllCatalogs();
+      const currentCatalogVersion = allCatalogs.find(c => c.id === catalog.id);
+      if (!currentCatalogVersion) {
+        throw new Error("Catálogo não encontrado. Tente novamente.");
+      }
+      const updatedUrls = [...(currentCatalogVersion.external_content_image_urls || []), ...uploadedUrls];
+      await externalCatalogService.updateCatalog(catalog.id, {
+        external_content_image_urls: updatedUrls,
+      });
 
-        const updatedUrls = [...(currentCatalogVersion.external_content_image_urls || []), imageUrl];
-        
-        await externalCatalogService.updateCatalog(catalog.id, {
-            external_content_image_urls: updatedUrls,
-        });
+      toast({
+        title: "Sucesso",
+        description: `${files.length} imagem(ns) adicionada(s) ao catálogo.`
+      });
 
-        toast({ title: "Sucesso", description: "Imagem adicionada ao catálogo." });
-        await loadCatalogImages();
     } catch (error: any) {
-        console.error("Error adding image to catalog:", error);
-        toast({ title: "Erro ao adicionar imagem", description: error.message || "Não foi possível adicionar a imagem.", variant: "destructive" });
+      console.error("Error uploading multiple files:", error);
+      toast({
+        title: "Erro de Upload",
+        description: error.message || "Não foi possível fazer o upload de um ou mais arquivos.",
+        variant: "destructive"
+      });
     } finally {
-        setIsUploading(false);
+      await loadCatalogImages();
+      setIsUploading(false);
     }
   };
 
-  const handleFileSubmit = async (file: File) => {
-      if (!file) return;
-      setIsUploading(true);
-      try {
-          const uploadedUrl = await uploadCatalogImage(file, 'catalog-images');
-          await addImageUrlToCatalog(uploadedUrl);
-      } catch(error: any) {
-          console.error("Error uploading file:", error);
-          toast({ title: "Erro de Upload", description: error.message || "Não foi possível fazer o upload do arquivo.", variant: "destructive" });
-          setIsUploading(false);
-      }
-  };
-
   const handleUrlSubmit = async (url: string) => {
-      if (!url) return;
+    if (!url) return;
+    setIsUploading(true);
+    try {
       await addImageUrlToCatalog(url);
+      toast({ title: "Sucesso", description: "Imagem adicionada ao catálogo." });
+    } catch (error: any) {
+      console.error("Error adding image to catalog:", error);
+      toast({ title: "Erro ao adicionar imagem", description: error.message || "Não foi possível adicionar a imagem.", variant: "destructive" });
+    } finally {
+      await loadCatalogImages();
+      setIsUploading(false);
+    }
   };
 
   const toggleFavorite = async (imageId: string) => {
