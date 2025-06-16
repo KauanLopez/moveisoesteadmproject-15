@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,7 +71,7 @@ const LoginForm = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="mt-1"
-              placeholder="admin@moveisOeste.com"
+              placeholder="Digite seu usuário"
               autoComplete="email"
             />
           </div>
@@ -88,7 +87,7 @@ const LoginForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="mt-1"
-              placeholder="admin123"
+              placeholder="Digite sua senha"
               autoComplete="current-password"
             />
           </div>
@@ -102,13 +101,7 @@ const LoginForm = () => {
           {isLoading ? "Entrando..." : "Entrar"}
         </Button>
         
-        <div className="text-sm text-center mt-4">
-          <p className="text-gray-600">
-            <strong>Credenciais de teste:</strong><br/>
-            Usuário: admin@moveisOeste.com<br/>
-            Senha: admin123
-          </p>
-        </div>
+        {/* O bloco de texto com as credenciais de teste foi removido daqui */}
       </form>
     </div>
   );
