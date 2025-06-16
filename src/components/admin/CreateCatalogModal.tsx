@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X } from 'lucide-react';
 import ImageUploadOptions from './ImageUploadOptions';
 import { uploadCatalogImage } from '@/services/imageService';
+import { useToast } from '@/components/ui/use-toast'; // Importar o useToast
 
 interface CreateCatalogModalProps {
   onClose: () => void;
-  onCreate: (catalog: { name: string; description: string; coverImage: string }) => void;
+  onCreate: (catalog: { name: string; description: string; coverImage: string }) => Promise<void>; // Tornar onCreate async
 }
 
 const CreateCatalogModal: React.FC<CreateCatalogModalProps> = ({ onClose, onCreate }) => {
@@ -18,21 +18,39 @@ const CreateCatalogModal: React.FC<CreateCatalogModalProps> = ({ onClose, onCrea
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast(); // Inicializar o toast
 
   const handleFileSubmit = async (file: File) => {
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
       const uploadedUrl = await uploadCatalogImage(file, 'catalog-covers');
       setCoverImage(uploadedUrl);
-    } catch (error) {
+      toast({
+        title: "Sucesso",
+        description: "Imagem de capa carregada. Agora você pode criar o catálogo."
+      });
+    } catch (error: any) {
       console.error('Error uploading cover image:', error);
+      // Exibir o erro para o usuário
+      toast({
+        title: "Erro no Upload da Capa",
+        description: error.message || "Não foi possível carregar a imagem.",
+        variant: "destructive"
+      });
+      // Limpar a imagem de capa em caso de erro para que o usuário possa tentar novamente
+      setCoverImage('');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleUrlSubmit = async (url: string) => {
+    // Para URLs, simplesmente definimos o estado. A validação já ocorre no componente filho.
     setCoverImage(url);
+    toast({
+      title: "URL da capa definida",
+      description: "Agora você pode criar o catálogo."
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,12 +59,17 @@ const CreateCatalogModal: React.FC<CreateCatalogModalProps> = ({ onClose, onCrea
 
     setIsSubmitting(true);
     try {
-      onCreate({
+      // Chama a função onCreate e espera ela terminar
+      await onCreate({
         name: name.trim(),
         description: description.trim(),
         coverImage
       });
+    } catch (error) {
+      // O erro já é tratado dentro do handleCreateCatalog, mas podemos adicionar um fallback aqui se necessário
+      console.error("Falha ao criar catálogo no modal:", error);
     } finally {
+      // Só define como falso após a conclusão do onCreate
       setIsSubmitting(false);
     }
   };
@@ -97,7 +120,7 @@ const CreateCatalogModal: React.FC<CreateCatalogModalProps> = ({ onClose, onCrea
               />
               {coverImage && (
                 <div className="mt-4 p-2 border rounded-md bg-gray-50">
-                  <p className="text-sm text-gray-700 mb-2">Imagem selecionada:</p>
+                  <p className="text-sm text-gray-700 mb-2">Imagem de capa selecionada:</p>
                   <img src={coverImage} alt="Cover preview" className="rounded-md max-h-40 mx-auto" />
                 </div>
               )}
@@ -109,9 +132,9 @@ const CreateCatalogModal: React.FC<CreateCatalogModalProps> = ({ onClose, onCrea
                 disabled={!name.trim() || !coverImage || isSubmitting}
                 className="flex-1"
               >
-                {isSubmitting ? 'Criando...' : 'Criar Catálogo'}
+                {isSubmitting ? 'Processando...' : 'Criar Catálogo'}
               </Button>
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancelar
               </Button>
             </div>
