@@ -75,13 +75,25 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-background text-foreground font-sans; /* Usa a família 'sans' (Inter) do Tailwind como padrão */
+    @apply bg-background text-foreground font-sans;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  /* Aplicar a fonte de display aos títulos globalmente */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display; /* Aplica Playfair Display a todos os elementos de título */
+    @apply font-display;
+  }
+}
+
+/* Bloco CORRIGIDO no final do arquivo */
+@layer components {
+  /* Alvo: Botão de fechar dentro do diálogo de imagem (que tem a classe .bg-transparent) */
+  .bg-transparent [data-radix-dialog-close] {
+    /* Define um fundo branco/translúcido, mas mantém o ícone preto */
+    @apply bg-white/80 hover:bg-white text-gray-800 rounded-full p-1;
+  }
+  /* Garante que o anel de foco também seja visível */
+  .bg-transparent [data-radix-dialog-close]:focus {
+      @apply ring-white/50 ring-offset-black/20;
   }
 }
