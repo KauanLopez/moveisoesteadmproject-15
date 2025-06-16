@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,9 +19,13 @@ const CreateCatalogModal: React.FC<CreateCatalogModalProps> = ({ onClose, onCrea
   const [coverImage, setCoverImage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleFileSubmit = async (file: File) => {
+  const handleFileSubmit = async (files: File[]) => {
+    if (files.length === 0) return;
+    
     try {
       setIsSubmitting(true);
+      // Take the first file from the array
+      const file = files[0];
       const uploadedUrl = await uploadCatalogImage(file, 'catalog-covers');
       setCoverImage(uploadedUrl);
     } catch (error) {
