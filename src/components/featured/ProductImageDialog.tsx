@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -27,7 +26,8 @@ const ProductImageDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent">
+      {/* O DialogContent já inclui um botão de fechar por padrão */}
+      <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none">
         <DialogTitle>
           <VisuallyHidden>Visualização em tela cheia</VisuallyHidden>
         </DialogTitle>
@@ -54,13 +54,7 @@ const ProductImageDialog = ({
               <p className="text-red-500">Não foi possível carregar a imagem</p>
             </div>
           )}
-          <button 
-            onClick={() => onOpenChange(false)} 
-            className="absolute top-3 right-3 bg-white/70 hover:bg-white rounded-full p-2 transition-colors"
-            aria-label="Fechar"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {/* O botão duplicado foi removido daqui */}
         </div>
       </DialogContent>
     </Dialog>
