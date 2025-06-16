@@ -21,12 +21,12 @@ export type ImageContent = {
 export const mapDbContentToImageContent = (dbContent: ContentItem): ImageContent => {
   return {
     id: dbContent.id,
-    section: dbContent.section,
+    section: dbContent.section || '',
     title: dbContent.title || '',
     description: dbContent.description || '',
     image: dbContent.image_url || '',
-    objectPosition: dbContent.object_position || 'center',
-    scale: dbContent.scale || 1
+    objectPosition: 'center', // Default value since database doesn't have this field yet
+    scale: 1 // Default value since database doesn't have this field yet
   };
 };
 
@@ -37,8 +37,7 @@ export const mapImageContentToDb = (content: ImageContent): Partial<ContentItem>
     section: content.section,
     title: content.title,
     description: content.description,
-    image_url: content.image,
-    object_position: content.objectPosition,
-    scale: content.scale
+    image_url: content.image
+    // Note: object_position and scale are not stored in database yet
   };
 };

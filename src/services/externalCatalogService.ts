@@ -15,7 +15,19 @@ export const externalCatalogService = {
         throw new Error('Erro ao buscar catálogos externos');
       }
       
-      return data || [];
+      // Transform the data to match our ExternalUrlCatalog type
+      const catalogs: ExternalUrlCatalog[] = (data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || '',
+        external_cover_image_url: item.external_cover_image_url,
+        external_content_image_urls: Array.isArray(item.external_content_image_urls) 
+          ? item.external_content_image_urls as string[]
+          : [],
+        created_at: item.created_at || new Date().toISOString()
+      }));
+      
+      return catalogs;
     } catch (error) {
       console.error('Error fetching external catalogs:', error);
       throw new Error('Erro ao buscar catálogos externos');
@@ -40,7 +52,19 @@ export const externalCatalogService = {
         throw new Error('Erro ao criar catálogo externo');
       }
       
-      return data;
+      // Transform the response to match our ExternalUrlCatalog type
+      const catalog: ExternalUrlCatalog = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        external_cover_image_url: data.external_cover_image_url,
+        external_content_image_urls: Array.isArray(data.external_content_image_urls) 
+          ? data.external_content_image_urls as string[]
+          : [],
+        created_at: data.created_at || new Date().toISOString()
+      };
+      
+      return catalog;
     } catch (error) {
       console.error('Error creating external catalog:', error);
       throw new Error('Erro ao criar catálogo externo');
@@ -67,7 +91,19 @@ export const externalCatalogService = {
         throw new Error('Erro ao atualizar catálogo externo');
       }
       
-      return data;
+      // Transform the response to match our ExternalUrlCatalog type
+      const catalog: ExternalUrlCatalog = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        external_cover_image_url: data.external_cover_image_url,
+        external_content_image_urls: Array.isArray(data.external_content_image_urls) 
+          ? data.external_content_image_urls as string[]
+          : [],
+        created_at: data.created_at || new Date().toISOString()
+      };
+      
+      return catalog;
     } catch (error) {
       console.error('Error updating external catalog:', error);
       throw new Error('Erro ao atualizar catálogo externo');
@@ -97,7 +133,7 @@ export const externalCatalogService = {
         }
         
         if (catalog.external_content_image_urls && Array.isArray(catalog.external_content_image_urls)) {
-          catalog.external_content_image_urls.forEach((url: string) => {
+          (catalog.external_content_image_urls as string[]).forEach((url: string) => {
             if (url) urlsToDelete.add(url);
           });
         }
