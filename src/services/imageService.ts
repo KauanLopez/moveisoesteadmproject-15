@@ -1,44 +1,50 @@
-import { authService } from "./authService";
+
+import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to generate a UUID using the crypto API
 const generateUUID = () => {
   return crypto.randomUUID();
 };
 
-// Mock upload function for frontend-only implementation
-export const uploadCatalogImage = async (file: File, folder: string = 'catalog-covers'): Promise<string> => {
-  return await authService.withValidSession(async () => {
-    // <-- MUDANÇA: A função agora retorna uma Promise que resolve com a Data URL.
-    return new Promise((resolve, reject) => {
-      try {
-        console.log(`Processing file for Data URL: ${file.name}`);
-        
-        // Valida o arquivo antes de processar
-        validateImageFile(file);
+// Upload function using Supabase Storage
+export const uploadCatalogImage = async (file: File, folder: string = 'catalog-images'): Promise<string> => {
+  try {
+    console.log(`Uploading file to Supabase Storage: ${file.name}`);
+    
+    // Validate the file before upload
+    validateImageFile(file);
 
-        const reader = new FileReader();
-        
-        // Quando a leitura do arquivo for concluída
-        reader.onload = () => {
-          console.log('Data URL created successfully.');
-          resolve(reader.result as string); // Retorna a string base64 (Data URL)
-        };
+    // Generate a unique file path
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${generateUUID()}.${fileExt}`;
+    const filePath = `public/${fileName}`;
 
-        // Em caso de erro na leitura
-        reader.onerror = (error) => {
-          console.error('Error reading file as Data URL:', error);
-          reject(new Error('Não foi possível ler o arquivo para gerar a URL.'));
-        };
+    // Upload file to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from(folder)
+      .upload(filePath, file);
 
-        // Inicia a leitura do arquivo para convertê-lo em Data URL
-        reader.readAsDataURL(file);
+    if (error) {
+      console.error('Supabase storage upload error:', error);
+      throw new Error(`Erro no upload: ${error.message}`);
+    }
 
-      } catch (error: any) {
-        console.error('Exception while preparing image upload:', error);
-        reject(error);
-      }
-    });
-  });
+    if (!data) {
+      throw new Error('Upload falhou - nenhum dado retornado');
+    }
+
+    // Get the public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(folder)
+      .getPublicUrl(filePath);
+
+    console.log('File uploaded successfully. Public URL:', publicUrl);
+    return publicUrl;
+
+  } catch (error: any) {
+    console.error('Exception while uploading image:', error);
+    throw error;
+  }
 };
 
 /**
@@ -65,10 +71,10 @@ const validateImageFile = (file: File): void => {
 
 // Upload para produtos em destaque e outras seções (NÃO catálogos)
 export const uploadProductImage = async (file: File): Promise<string> => {
-  return uploadCatalogImage(file, 'product-images');
+  return uploadCatalogImage(file, 'catalog-images');
 };
 
 // Upload para gerente e outras seções (NÃO catálogos)
 export const uploadManagerImage = async (file: File): Promise<string> => {
-  return uploadCatalogImage(file, 'manager-images');
+  return uploadCatalogImage(file, 'catalog-images');
 };

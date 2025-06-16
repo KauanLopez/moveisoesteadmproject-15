@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X } from 'lucide-react';
 import ImageUploadOptions from './ImageUploadOptions';
+import { uploadCatalogImage } from '@/services/imageService';
 
 interface CreateCatalogModalProps {
   onClose: () => void;
@@ -18,14 +19,20 @@ const CreateCatalogModal: React.FC<CreateCatalogModalProps> = ({ onClose, onCrea
   const [coverImage, setCoverImage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleImageSelect = (imageData: { file?: File; url?: string }) => {
-    if (imageData.file) {
-      // Create a mock URL for the file (in a real app, you'd upload to a server)
-      const mockUrl = URL.createObjectURL(imageData.file);
-      setCoverImage(mockUrl);
-    } else if (imageData.url) {
-      setCoverImage(imageData.url);
+  const handleFileSubmit = async (file: File) => {
+    try {
+      setIsSubmitting(true);
+      const uploadedUrl = await uploadCatalogImage(file, 'catalog-covers');
+      setCoverImage(uploadedUrl);
+    } catch (error) {
+      console.error('Error uploading cover image:', error);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleUrlSubmit = async (url: string) => {
+    setCoverImage(url);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,11 +86,22 @@ const CreateCatalogModal: React.FC<CreateCatalogModalProps> = ({ onClose, onCrea
               />
             </div>
 
-            <ImageUploadOptions
-              title="Capa do Catálogo *"
-              onImageSelect={handleImageSelect}
-              currentImage={coverImage}
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Capa do Catálogo *
+              </label>
+              <ImageUploadOptions
+                onFileSubmit={handleFileSubmit}
+                onUrlSubmit={handleUrlSubmit}
+                isUploading={isSubmitting}
+              />
+              {coverImage && (
+                <div className="mt-4 p-2 border rounded-md bg-gray-50">
+                  <p className="text-sm text-gray-700 mb-2">Imagem selecionada:</p>
+                  <img src={coverImage} alt="Cover preview" className="rounded-md max-h-40 mx-auto" />
+                </div>
+              )}
+            </div>
 
             <div className="flex gap-3 pt-4">
               <Button

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalUrlCatalog } from '@/types/externalCatalogTypes';
@@ -18,7 +19,7 @@ export const useCatalogImagesModal = (catalog: ExternalUrlCatalog) => {
       const currentCatalog = updatedCatalogs.find(c => c.id === catalog.id);
 
       if (currentCatalog) {
-        const syncedImages = favoriteSyncService.syncCatalogImagesWithFavorites(currentCatalog);
+        const syncedImages = await favoriteSyncService.syncCatalogImagesWithFavorites(currentCatalog);
         setImages(syncedImages);
       }
     } catch (error) {
@@ -43,7 +44,7 @@ export const useCatalogImagesModal = (catalog: ExternalUrlCatalog) => {
             throw new Error("Catálogo não encontrado. Tente novamente.");
         }
 
-        const updatedUrls = [...currentCatalogVersion.external_content_image_urls, imageUrl];
+        const updatedUrls = [...(currentCatalogVersion.external_content_image_urls || []), imageUrl];
         
         await externalCatalogService.updateCatalog(catalog.id, {
             external_content_image_urls: updatedUrls,
@@ -85,7 +86,7 @@ export const useCatalogImagesModal = (catalog: ExternalUrlCatalog) => {
       const image = images[imageIndex];
       const newFavoriteStatus = !image.isFavorite;
       
-      const success = favoriteSyncService.updateImageFavoriteStatus(image.image, newFavoriteStatus);
+      const success = await favoriteSyncService.updateImageFavoriteStatus(image.image, newFavoriteStatus);
       
       if (success) {
         const updatedImages = [...images];
@@ -124,7 +125,7 @@ export const useCatalogImagesModal = (catalog: ExternalUrlCatalog) => {
         const currentCatalogVersion = allCatalogs.find(c => c.id === catalog.id);
         if (!currentCatalogVersion) throw new Error("Catálogo não encontrado.");
 
-        const updatedUrls = currentCatalogVersion.external_content_image_urls.filter(
+        const updatedUrls = (currentCatalogVersion.external_content_image_urls || []).filter(
             url => url !== imageToDelete.image
         );
 

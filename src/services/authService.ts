@@ -1,26 +1,43 @@
 
-// Mock auth service for frontend-only application
-export const authService = {
-  async validateSession() {
-    // Always return valid for frontend-only app
-    return { valid: true };
-  },
+import { supabase } from '@/integrations/supabase/client';
 
+export const authService = {
+  /**
+   * Execute a function with valid session, throwing an error if not authenticated
+   */
   async withValidSession<T>(fn: () => Promise<T>): Promise<T> {
-    // Just execute the function since there's no real auth
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Auth session error:', error);
+      throw new Error('Erro de autenticação. Faça login novamente.');
+    }
+    
+    if (!session) {
+      throw new Error('Usuário não autenticado. Faça login para continuar.');
+    }
+    
     return await fn();
   },
 
+  /**
+   * Check if user is authenticated
+   */
   async isAuthenticated(): Promise<boolean> {
-    // Check if user is "logged in" via localStorage
-    return localStorage.getItem('frontend_auth') === 'true';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session;
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      return false;
+    }
   },
 
+  /**
+   * Get current user
+   */
   async getCurrentUser() {
-    // Return mock user if authenticated
-    if (await this.isAuthenticated()) {
-      return { id: 'mock-user', email: 'admin@example.com' };
-    }
-    return null;
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
   }
 };

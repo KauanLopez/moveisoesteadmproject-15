@@ -1,9 +1,11 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
 type AuthContextType = {
-  user: any | null;
-  session: any | null;
+  user: User | null;
+  session: Session | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   createUser: (email: string, password: string) => Promise<boolean>;
@@ -14,38 +16,46 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any | null>(null);
-  const [session, setSession] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is "logged in" via localStorage
-    const isLoggedIn = localStorage.getItem('frontend_auth') === 'true';
-    setIsAuthenticated(isLoggedIn);
-    
-    if (isLoggedIn) {
-      setUser({ id: 'mock-user', email: 'admin@example.com' });
-      setSession({ user: { id: 'mock-user', email: 'admin@example.com' } });
-    }
-    
-    setIsLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session);
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       
-      // Simple check for demo purposes
-      if (email === 'admin@moveisOeste.com' && password === 'admin123') {
-        localStorage.setItem('frontend_auth', 'true');
-        setIsAuthenticated(true);
-        setUser({ id: 'mock-user', email: 'admin@moveisOeste.com' });
-        setSession({ user: { id: 'mock-user', email: 'admin@moveisOeste.com' } });
-        return true;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        return false;
       }
-      
-      return false;
+
+      return !!data.user;
     } catch (error) {
       console.error('Login exception:', error);
       return false;
@@ -56,23 +66,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createUser = async (email: string, password: string): Promise<boolean> => {
     try {
-      // In a frontend-only app, just store user in localStorage
-      const users = JSON.parse(localStorage.getItem('moveis_oeste_users') || '[]');
-      const newUser = {
-        id: crypto.randomUUID(),
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.auth.signUp({
         email,
-        password, // In real app, this should be hashed
-        isAdmin: true,
-        created_at: new Date().toISOString()
-      };
-      
-      users.push(newUser);
-      localStorage.setItem('moveis_oeste_users', JSON.stringify(users));
-      
-      return true;
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        console.error('Signup error:', error);
+        return false;
+      }
+
+      return !!data.user;
     } catch (error) {
-      console.error('Create user exception:', error);
+      console.error('Signup exception:', error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,10 +94,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       
-      localStorage.removeItem('frontend_auth');
-      setIsAuthenticated(false);
-      setUser(null);
-      setSession(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+      }
       
       // Force page refresh to ensure clean state
       setTimeout(() => {

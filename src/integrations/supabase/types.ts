@@ -9,7 +9,128 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      content: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          section: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          section?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          section?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      external_url_catalogs: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          external_content_image_urls: Json | null
+          external_cover_image_url: string
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          external_content_image_urls?: Json | null
+          external_cover_image_url: string
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          external_content_image_urls?: Json | null
+          external_cover_image_url?: string
+          id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      featured_products: {
+        Row: {
+          catalog_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string
+          title: string | null
+        }
+        Insert: {
+          catalog_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          title?: string | null
+        }
+        Update: {
+          catalog_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_products_catalog_id_fkey"
+            columns: ["catalog_id"]
+            isOneToOne: false
+            referencedRelation: "external_url_catalogs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

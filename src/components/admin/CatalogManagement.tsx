@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, Image, Star, Trash2 } from 'lucide-react';
-import { fetchExternalCatalogs, deleteExternalCatalog } from '@/services/externalCatalogService';
-import { localStorageService, StoredExternalCatalog } from '@/services/localStorageService'; // <-- MUDANÇA: Importando o localStorageService
+import { fetchExternalCatalogs, deleteExternalCatalog, saveExternalCatalog } from '@/services/externalCatalogService';
 import { ExternalUrlCatalog } from '@/types/externalCatalogTypes';
 import CreateCatalogModal from './CreateCatalogModal';
 import CatalogImagesModal from './CatalogImagesModal';
@@ -38,19 +38,14 @@ const CatalogManagement = () => {
     }
   };
 
-  // <-- MUDANÇA: Função de criar catálogo foi implementada para usar o localStorage
-  const handleCreateCatalog = (catalogData: { name: string; description: string; coverImage: string }) => {
+  const handleCreateCatalog = async (catalogData: { name: string; description: string; coverImage: string }) => {
     try {
-      const newCatalog: StoredExternalCatalog = {
-        id: crypto.randomUUID(),
+      await saveExternalCatalog({
         title: catalogData.name,
         description: catalogData.description,
         external_cover_image_url: catalogData.coverImage,
-        external_content_image_urls: [],
-        created_at: new Date().toISOString()
-      };
-
-      localStorageService.addExternalCatalog(newCatalog);
+        external_content_image_urls: []
+      });
       
       toast({
         title: "Sucesso!",
@@ -69,7 +64,6 @@ const CatalogManagement = () => {
     }
   };
 
-  // <-- MUDANÇA: Função de deletar catálogo foi implementada
   const handleDeleteCatalog = async (catalogId: string, catalogTitle: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o catálogo "${catalogTitle}"?`)) {
         try {
@@ -163,7 +157,6 @@ const CatalogManagement = () => {
                     <Star className="h-3 w-3" />
                     Catálogo do site principal
                   </span>
-                  {/* <-- MUDANÇA: Botão de deletar agora chama a função correta e está habilitado */}
                   <Button
                     variant="ghost"
                     size="sm"

@@ -1,4 +1,6 @@
+
 import { ExternalUrlCatalog } from '@/types/externalCatalogTypes';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface SyncedCatalogImage {
   id: string;
@@ -11,28 +13,22 @@ export interface SyncedCatalogImage {
 
 export const favoriteSyncService = {
   /**
-   * Gets the list of featured product URLs from localStorage
+   * Gets the list of featured product URLs from Supabase
    */
-  getFeaturedProductUrls(): string[] {
+  async getFeaturedProductUrls(): Promise<string[]> {
     try {
-      // First, try to get from the content storage
-      const storedContent = localStorage.getItem('moveis_oeste_content');
-      const featuredUrls: string[] = [];
+      const { data, error } = await supabase
+        .from('featured_products')
+        .select('image_url');
       
-      if (storedContent) {
-        const allContent = JSON.parse(storedContent);
-        const featuredProducts = allContent.filter((item: any) => 
-          item.section === 'products' && (item.eh_favorito === true || item.isFeatured === true)
-        );
-        
-        featuredProducts.forEach((item: any) => {
-          const url = item.image_url || item.image;
-          if (url) featuredUrls.push(url);
-        });
+      if (error) {
+        console.error('Error fetching featured products:', error);
+        return [];
       }
       
+      const featuredUrls = data?.map(item => item.image_url) || [];
       console.log('FavoriteSyncService: All featured URLs:', featuredUrls);
-      return [...new Set(featuredUrls)];
+      return featuredUrls;
     } catch (error) {
       console.error('Error getting featured product URLs:', error);
       return [];
@@ -42,8 +38,8 @@ export const favoriteSyncService = {
   /**
    * Synchronizes catalog images with featured products state
    */
-  syncCatalogImagesWithFavorites(catalog: ExternalUrlCatalog): SyncedCatalogImage[] {
-    const featuredUrls = this.getFeaturedProductUrls();
+  async syncCatalogImagesWithFavorites(catalog: ExternalUrlCatalog): Promise<SyncedCatalogImage[]> {
+    const featuredUrls = await this.getFeaturedProductUrls();
     const featuredUrlsSet = new Set(featuredUrls);
     
     console.log('FavoriteSyncService: Featured URLs found:', featuredUrls);
@@ -75,45 +71,38 @@ export const favoriteSyncService = {
   /**
    * Updates the favorite status of a specific image
    */
-  updateImageFavoriteStatus(imageUrl: string, isFavorite: boolean): boolean {
+  async updateImageFavoriteStatus(imageUrl: string, isFavorite: boolean): Promise<boolean> {
     try {
-      const storedContent = localStorage.getItem('moveis_oeste_content');
-      let allContent = storedContent ? JSON.parse(storedContent) : [];
-      
       if (isFavorite) {
-        // Add to favorites if not already there
-        const existingIndex = allContent.findIndex((item: any) => 
-          (item.image_url === imageUrl || item.image === imageUrl) && item.section === 'products'
-        );
-        
-        if (existingIndex === -1) {
-          const contentItem = {
-            id: `featured-${crypto.randomUUID()}`,
+        // Add to favorites
+        const { error } = await supabase
+          .from('featured_products')
+          .insert({
             image_url: imageUrl,
-            image: imageUrl,
             title: 'Produto em Destaque',
-            description: 'Adicionado via painel administrativo',
-            section: 'products',
-            eh_favorito: true,
-            isFeatured: true,
-            created_at: new Date().toISOString()
-          };
-          allContent.push(contentItem);
-        } else {
-          allContent[existingIndex].eh_favorito = true;
-          allContent[existingIndex].isFeatured = true;
+            description: 'Adicionado via painel administrativo'
+          });
+        
+        if (error) {
+          console.error('Error adding to favorites:', error);
+          return false;
         }
       } else {
         // Remove from favorites
-        allContent = allContent.filter((item: any) => 
-          !((item.image_url === imageUrl || item.image === imageUrl) && item.section === 'products')
-        );
+        const { error } = await supabase
+          .from('featured_products')
+          .delete()
+          .eq('image_url', imageUrl);
+        
+        if (error) {
+          console.error('Error removing from favorites:', error);
+          return false;
+        }
       }
       
-      localStorage.setItem('moveis_oeste_content', JSON.stringify(allContent));
       console.log('FavoriteSyncService: Updated favorite status for:', imageUrl, 'to:', isFavorite);
       
-      // Dispara um evento para notificar outras partes da aplicação
+      // Dispatch event to notify other parts of the application
       window.dispatchEvent(new CustomEvent('localStorageUpdated'));
 
       return true;
